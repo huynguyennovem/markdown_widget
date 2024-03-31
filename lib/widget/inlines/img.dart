@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:markdown_widget/markdown_widget.dart';
@@ -23,17 +25,38 @@ class ImageNode extends SpanNode {
     final imageUrl = attributes['src'] ?? '';
     final alt = attributes['alt'] ?? '';
     final isNetImage = imageUrl.startsWith('http');
-    final imgWidget = isNetImage
-        ? Image.network(imageUrl,
-            width: width,
-            height: height,
-            fit: BoxFit.cover, errorBuilder: (ctx, error, stacktrace) {
-            return buildErrorImage(imageUrl, alt, error);
-          })
-        : Image.asset(imageUrl, width: width, height: height, fit: BoxFit.cover,
-            errorBuilder: (ctx, error, stacktrace) {
-            return buildErrorImage(imageUrl, alt, error);
-          });
+
+    // the uploaded local path is encoded, so we need to decode it
+    String decodedPath = imageUrl;
+    bool isSystemPath = false;
+    if(!isNetImage) {
+      decodedPath = Uri.decodeFull(imageUrl);
+      try {
+        isSystemPath = File(decodedPath).existsSync();
+      } catch (e) {
+        debugPrint(e.toString());
+      }
+    }
+    Widget imgWidget = SizedBox.shrink();
+    if (isNetImage) {
+      imgWidget = Image.network(imageUrl, width: width, height: height, fit: BoxFit.cover,
+          errorBuilder: (ctx, error, stacktrace) {
+        debugPrint('Error while loading image: $error');
+        return buildErrorImage(imageUrl, alt, error);
+      });
+    } else if (isSystemPath) {
+      imgWidget = Image.file(File(decodedPath), width: width, height: height, fit: BoxFit.cover,
+          errorBuilder: (ctx, error, stacktrace) {
+        debugPrint('Error while loading image: $error');
+        return buildErrorImage(imageUrl, alt, error);
+      });
+    } else {
+      imgWidget = Image.asset(decodedPath, width: width, height: height, fit: BoxFit.cover,
+          errorBuilder: (ctx, error, stacktrace) {
+        debugPrint('Error while loading image: $error');
+        return buildErrorImage(imageUrl, alt, error);
+      });
+    }
     final result = (parent != null && parent is LinkNode)
         ? imgWidget
         : Builder(builder: (context) {

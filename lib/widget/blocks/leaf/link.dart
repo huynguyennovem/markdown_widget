@@ -51,10 +51,7 @@ class LinkConfig implements LeafConfig {
   final TextStyle style;
   final ValueCallback<String>? onTap;
 
-  const LinkConfig(
-      {this.style = const TextStyle(
-          color: Color(0xff0969da), decoration: TextDecoration.underline),
-      this.onTap});
+  const LinkConfig({this.style = const TextStyle(color: Color(0xff0969da)), this.onTap});
 
   @nonVirtual
   @override
